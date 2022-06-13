@@ -1,8 +1,8 @@
 # PROTECCIÓN DEL ROUTER
-# - trabaje con  nuevas conexiones para disminuir la carga en un enrutador;
-# - crear una lista de direcciones para las IP que pueden acceder a su enrutador;
-# - habilitar el acceso ICMP (opcionalmente);
-# - elimine todo lo demás, log=yes podría agregarse a los paquetes de registro que cumplen con la regla específica;
+# - Trabaje con  nuevas conexiones para disminuir la carga en un enrutador;
+# - Crear una lista de direcciones para las IP que pueden acceder a su enrutador;
+# - Habilitar el acceso ICMP (opcionalmente);
+# - Elimine todo lo demás, log=yes podría agregarse a los paquetes de registro que cumplen con la regla específica;
 /ip firewall filter
 add action=accept chain=input comment="conexiones establecidas y relacionadas" connection-state=established,related
 add action=accept chain=input src-address-list=conexiones_permitidas
