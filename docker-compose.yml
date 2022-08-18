@@ -1,0 +1,116 @@
+version: "2.4"
+services:
+  mep-redis:
+    image: redis
+    container_name: mep-redis
+    restart: unless-stopped
+    #ports:
+    #  - 80
+    volumes:
+      - ../../data/apps/mep/redis:/data
+    networks:
+      - uw2-backend
+  mep-rabbitmq:
+    container_name: mep-rabbitmq
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    #ports:
+    #  - 5672
+    #  - 15672
+    volumes:
+      - ../../data/apps/mep/rabbitmq:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+    networks:
+      - uw2-backend
+  mep-worker:
+    container_name: mep-worker
+    image: accusystechnology/mep-worker:1.0.3
+    restart: unless-stopped
+    #ports:
+    #  - 80
+    environment:
+      SPNETCORE_ENVIRONMENT: "Production"
+      WORKER_ONLINE: "S"
+      WORKER_TIME_TO_API: "600"
+      MEP_MICROSERVICIO_BCRA_URL: http://mep-bcra
+      REDIS: mep-redis
+      RABBIT: mep-rabbitmq
+      TZ: "America/Argentina/Buenos_Aires"
+    networks:
+      - uw2-backend
+  mep-bcra:
+    container_name: mep-bcra
+    image: accusystechnology/mep-bcra:1.0.9
+    restart: unless-stopped
+    #ports:
+    #  - 80
+    environment:
+      BCRA_USER: 
+      BCRA_PASS: 
+      BCRA_ENDPOINT: https://serviciosmep.homologacion.bcra.sfa/api
+      BCRA_TIMEOUT_MS: 10000
+      TZ: "America/Argentina/Buenos_Aires"
+    extra_hosts:
+      - "serviciosmep.homologacion.bcra.sfa:192.168.10.59"
+    networks:
+      - uw2-backend
+  mep-connector:
+    container_name: mep-connector
+    image: accusystechnology/mep-connector:1.0.1
+    restart: unless-stopped
+    #ports:
+    #  - 80
+    environment:
+      API_CLIENTES: ""
+      API_CUENTAS: ""
+      API_DEBITO: ""
+      API_CREDITO: ""
+    networks:
+      - uw2-backend
+  mep-api:
+    container_name: mep-api
+    image: accusystechnology/mep-api:1.0.49
+    restart: unless-stopped
+    ports:
+      - 80
+    # Deprecated
+    #volumes:
+    #  - ../../data/apps/mep/api/logs:/app/logs
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      UNIWEB_SERVER: "http://manager-api:8080"
+      APPLICATION_NAME: "MEP"
+      MEPConectorEndpoint: http://mep-connector
+      ApiBCRAEndpoint: http://mep-bcra
+      DbConnectionString: "Server=192.168.172.57;Database=uw_mep;User ID=usr_mep;Password=Accusys123*;MultipleActiveResultSets=True"
+      DbConnectionStringLog: "Server=192.168.172.57;Database=uw_mep_auditoria;User ID=usr_mep;Password=Accusys123*;MultipleActiveResultSets=True"
+      REDIS: mep-redis
+      RABBIT: mep-rabbitmq
+      TZ: "America/Argentina/Buenos_Aires"
+    networks:
+      - uw2-backend
+  mep-app:
+    image: accusystechnology/mep-app:1.0.25
+    container_name: mep-app
+    restart: unless-stopped
+    ports:
+      - 4102:80
+    environment:
+      IDP_CLIENT_ID: 
+      IDP_SERVER_URL: http://<IPlocal>:8090 
+      ENTIDAD: 86
+      SERVICE_MANAGER_URL: http://wso2am:8280/service.manager/1.0/
+      SERVICE_NOTIFICATION_URL: https://wso2am:8280/service.notification/1.0/
+      SERVICE_API_MEP_URL: http://wso2am:8280/service.mep/1.0/
+      TZ: "America/Argentina/Buenos_Aires"
+    networks:
+      - uw2-frontend
+networks:
+  uw2-frontend:
+    name: uw2-frontend
+    external: true
+  uw2-backend:
+    name: uw2-backend
+    external: true
